@@ -6,7 +6,7 @@ const states = {
 
 export class CustomPromise {
     private state: string;
-    constructor(executor) {
+    constructor(executor: (resolve, reject) => unknown) {
         const resolve = () => {
             this.state = states.resolved;
         }
