@@ -8,14 +8,17 @@ export class CustomPromise {
     value;
   
     constructor(execute) {
+        const tryCall = callback => CustomPromise.try(() => callback());
         const methods = {
             [states.resolved]: {
                 state: states.resolved,
-                then: thenMethod => CustomPromise.resolve(thenMethod(this.value))
+                then: tryCall,
+                catch: _ => this
             },
             [states.rejected]: {
                 state: states.rejected,
-                then: _ => this
+                then: _ => this,
+                catch: tryCall
             },
             [states.pending]: {
                 state: states.pending
@@ -43,8 +46,12 @@ export class CustomPromise {
       }
     }
   
+    static try(callback) {
+        return new CustomPromise(resolve => resolve(callback()));
+    }
+
     static resolve(value) {
-      return new CustomPromise((resolve, reject) => {
+      return new CustomPromise(resolve => {
         resolve(value);
       })
     }
