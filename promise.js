@@ -9,6 +9,7 @@ export class CustomPromise {
   
     constructor(execute) {
         const tryCall = callback => CustomPromise.try(() => callback(this.value));
+        const laterCalls = [];
         const methods = {
             [states.resolved]: {
                 state: states.resolved,
@@ -21,7 +22,9 @@ export class CustomPromise {
                 catch: tryCall
             },
             [states.pending]: {
-                state: states.pending
+                state: states.pending,
+                then: () => laterCalls.push(this.then), // this will push to "queue" all calls for this two functions, they will be invoked async 
+                catch: () => laterCalls.push(this.catch)
             }
         };
         const changeState = state => Object.assign(this, methods[state]);
@@ -30,6 +33,9 @@ export class CustomPromise {
             if(this.state === states.pending) {
                 this.value = value;
                 changeState(state);
+                for(const call of laterCalls) {
+                  call();
+                }
             }
         }
 
@@ -46,12 +52,14 @@ export class CustomPromise {
         const resolve = getParametersCallback(states.resolved)
         const reject = getParametersCallback(states.rejected)
         changeState(states.pending);
-
-        try {
+        setTimeout(() => {
+          try {
             execute(resolve, reject);
-        } catch(error) {
-            reject(error);
-        }
+          } catch(error) {
+              reject(error);
+          }
+        }, 0);
+
     }
   
     static try(callback) {
