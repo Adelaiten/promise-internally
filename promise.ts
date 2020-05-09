@@ -3,59 +3,56 @@ const states = {
     resolved: 'resolved',
     rejected: 'rejected'
 }
-
 export class CustomPromise {
     state;
     value;
-    constructor(executor) {
-        const members =  { 
+  
+    constructor(execute) {
+        const methods = {
             [states.resolved]: {
-            state: states.resolved,
-            // Chain mechanism
-            then: onResolved => CustomPromise.resolve(onResolved(this.value))
+                state: states.resolved,
+                then: thenMethod => CustomPromise.resolve(thenMethod(this.value))
             },
             [states.rejected]: {
                 state: states.rejected,
-                // Ignore mechanism
                 then: _ => this
             },
             [states.pending]: {
                 state: states.pending
             }
         };
-        const changeState = state => Object.assign(this, members[state]);
-        const resolve = (value) => {
-            this.state = states.resolved;
-            changeState(this.state);
-            this.value = value;
-        }
 
-        const reject = (error) => {
-            console.log(error);
-            this.state = states.rejected;
-            changeState(this.state);
-
-        }
-
-        this.state = states.pending;
-        try {
-            executor(resolve, reject);
-        } catch(error) {
-            reject(error);
-        }
+      const resolve = (value) => {
+        this.state = states.resolved;
+        Object.assign(this, methods[this.state]);
+        this.value = value;
+      }
+  
+      const reject = (error) => {
+        this.state = states.rejected;
+        Object.assign(this, methods[this.state]);
+        console.error(error);
+      }
+      
+      this.state = states.pending;
+      Object.assign(this, methods[this.state]);
+      try {
+        execute(resolve, reject);
+      } catch(error) {
+        reject(error);
+      }
     }
-
+  
     static resolve(value) {
-        return new CustomPromise(resolve => resolve(value));
+      return new CustomPromise((resolve, reject) => {
+        resolve(value);
+      })
     }
-
+  
     static reject(value) {
-        return new CustomPromise((_, reject) => reject(value));
+      return new CustomPromise((resolve, reject) => {
+        reject(value);
+      })
     }
-}
-
-const test = new CustomPromise((resolve, reject) => {
-
-});
-
-test.then()
+  }
+  
