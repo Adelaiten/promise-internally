@@ -34,12 +34,13 @@ export class CustomPromise {
         }
 
         const getParametersCallback = state => value => {
+          // this will unpack coming promise or resolve in else
             if (value instanceof CustomPromise && state === states.resolved) {
                 value.then(value => apply(value, states.resolved));
                 value.catch(value => apply(value, states.rejected));
+            } else {
+              apply(state, value);
             }
-            this.value = value;
-            changeState(state);
         }
 
         const resolve = getParametersCallback(states.resolved)
