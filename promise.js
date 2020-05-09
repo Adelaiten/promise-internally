@@ -24,23 +24,33 @@ export class CustomPromise {
                 state: states.pending
             }
         };
+        const changeState = state => Object.assign(this, methods[state]);
 
-      const changeState = state => Object.assign(this, methods[state])
+        const apply = (state, value) => {
+            if(this.state === states.pending) {
+                this.value = value;
+                changeState(state);
+            }
+        }
 
-      const getParametersCallback = state => value => {
-          this.value = value;
-          changeState(state);
-      }
+        const getParametersCallback = state => value => {
+            if (value instanceof CustomPromise && state === states.resolved) {
+                value.then(value => apply(value, states.resolved));
+                value.catch(value => apply(value, states.rejected));
+            }
+            this.value = value;
+            changeState(state);
+        }
 
-      const resolve = getParametersCallback(states.resolved)
-      const reject = getParametersCallback(states.rejected)
-      changeState(states.pending);
+        const resolve = getParametersCallback(states.resolved)
+        const reject = getParametersCallback(states.rejected)
+        changeState(states.pending);
 
-      try {
-        execute(resolve, reject);
-      } catch(error) {
-        reject(error);
-      }
+        try {
+            execute(resolve, reject);
+        } catch(error) {
+            reject(error);
+        }
     }
   
     static try(callback) {
