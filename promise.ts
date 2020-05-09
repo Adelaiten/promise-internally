@@ -8,7 +8,7 @@ export class CustomPromise {
     value;
   
     constructor(execute) {
-        const tryCall = callback => CustomPromise.try(() => callback());
+        const tryCall = callback => CustomPromise.try(() => callback(this.value));
         const methods = {
             [states.resolved]: {
                 state: states.resolved,
@@ -25,20 +25,17 @@ export class CustomPromise {
             }
         };
 
-      const resolve = (value) => {
-        this.state = states.resolved;
-        Object.assign(this, methods[this.state]);
-        this.value = value;
+      const changeState = state => Object.assign(this, methods[state])
+
+      const getParametersCallback = state => value => {
+          this.value = value;
+          changeState(state);
       }
-  
-      const reject = (error) => {
-        this.state = states.rejected;
-        Object.assign(this, methods[this.state]);
-        console.error(error);
-      }
-      
-      this.state = states.pending;
-      Object.assign(this, methods[this.state]);
+
+      const resolve = getParametersCallback(states.resolved)
+      const reject = getParametersCallback(states.rejected)
+      changeState(states.pending);
+
       try {
         execute(resolve, reject);
       } catch(error) {
